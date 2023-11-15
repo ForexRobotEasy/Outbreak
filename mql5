@@ -1,0 +1,110 @@
+
+// Program: Outbreak
+// Developer: Forex Robot Easy Team
+// Developer's Site: forexroboteasy.com
+
+// Include necessary libraries
+#include <Trade\Trade.mqh>
+
+// Define constants
+const double INITIAL_PRICE = 399;
+const double PRICE_INCREASE = 50;
+const double PROFIT_INCREASE = 0.05;
+
+// Create an instance of the trade class
+CTrade trade;
+
+// Function to check if there is an open order
+bool IsOrderOpen()
+{
+   MqlTradeRequest request;
+   ZeroMemory(request);
+   request.action = TRADE_ACTION_SLTP;
+   bool result = trade.PositionGet(request);
+   return result;
+}
+
+// Function to calculate the new purchase price based on profit
+double CalculatePurchasePrice(double currentPrice, double profit)
+{
+   int priceIncreaseCount = MathFloor(profit / PROFIT_INCREASE);
+   double newPrice = currentPrice + priceIncreaseCount * PRICE_INCREASE;
+   return newPrice;
+}
+
+// Function to open a trade
+void OpenTrade()
+{
+   // Check if there is already an open order
+   if (IsOrderOpen())
+   {
+      return;
+   }
+   
+   // Implement breakout strategy to identify trade opportunities
+   
+   // Open the trade with a stop loss
+   MqlTradeRequest request;
+   ZeroMemory(request);
+   request.action = TRADE_ACTION_DEAL;
+   request.symbol = 'EURUSD';
+   request.volume = 0.1;
+   request.type = ORDER_TYPE_BUY;
+   request.price = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
+   request.stoploss = request.price - 0.01; // Set stop loss 10 pips below entry price
+   
+   trade.PositionOpen(request);
+}
+
+// Function to close the trade within the same day
+void CloseTrade()
+{
+   // Check if there is an open order
+   if (!IsOrderOpen())
+   {
+      return;
+   }
+   
+   // Close the open trade
+   MqlTradeRequest request;
+   ZeroMemory(request);
+   request.action = TRADE_ACTION_DEAL;
+   request.symbol = 'EURUSD';
+   request.volume = 0.1;
+   request.type = ORDER_TYPE_SELL;
+   request.price = SymbolInfoDouble(_Symbol, SYMBOL_BID);
+   
+   trade.PositionClose(request);
+}
+
+// Function to handle the pricing structure
+void HandlePricingStructure(double profit)
+{
+   double currentPrice = INITIAL_PRICE;
+   double newPrice = CalculatePurchasePrice(currentPrice, profit);
+   
+   // Update the purchase price if necessary
+   if (newPrice > currentPrice)
+   {
+      currentPrice = newPrice;
+   }
+   
+   // Output the current purchase price
+   Print('Current purchase price: ', currentPrice);
+}
+
+// Entry point of the program
+void OnTick()
+{
+   // Implement breakout strategy to identify trade opportunities
+   
+   // Open trade if conditions are met
+   OpenTrade();
+   
+   // Close trade if necessary
+   CloseTrade();
+   
+   // Calculate profit and handle pricing structure
+   double profit = trade.PositionGetDouble(POSITION_PROFIT);
+   HandlePricingStructure(profit);
+}
